@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Web</title>
+</head>
+<body>
+    <h1>Liste des Articles</h1>
+    <ul id="articles"></ul>
+
+    <script>
+        // Fonction pour actualiser la liste des articles
+        function updateArticles() {
+            fetch('http://localhost:80/api/articles') // Modifié pour utiliser le reverse proxy
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la récupération des articles : ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const articlesList = document.getElementById('articles');
+                    articlesList.innerHTML = ''; // Efface la liste actuelle
+                    data.forEach(article => {
+                        let li = document.createElement('li');
+                        li.textContent = article.title;
+                        articlesList.appendChild(li);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                });
+        }
+
+        // Connexion au WebSocket via le reverse proxy
+        const ws = new WebSocket('ws://localhost/ws/');  // Utilise ws pour WebSocket non sécurisé
+
+        // Gérer la réception des messages WebSocket
+        ws.onmessage = function(event) {
+            console.log('Message WebSocket reçu:', event.data);
+            if (event.data === 'Nouveau message reçu') {
+                // Recharge la page pour afficher les articles à jour
+                location.reload(); // Recharger la page
+            }
+        };
+
+        // Gérer la connexion établie
+        ws.onopen = function() {
+            console.log('Connexion WebSocket établie');
+            ws.send('Message depuis le navigateur'); // Envoie un message de test
+        };
+
+        // Gérer les erreurs WebSocket
+        ws.onerror = function(event) {
+            console.error('Erreur WebSocket:', event);
+        };
+
+        // Gérer la fermeture du WebSocket
+        ws.onclose = function(event) {
+            console.log('Connexion WebSocket fermée:', event);
+        };
+
+        // Charger initialement la liste des articles
+        updateArticles();
+    </script>
+</body>
+</html>

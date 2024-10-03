@@ -1,0 +1,40 @@
+services:
+  flask-api:
+    build:
+      context: ./FlaskAPI
+    ports:
+      - "5002:5002"
+    networks:
+      - app-network
+
+  go-websocket:
+    build:
+      context: ./GoWebsocket
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  nginx:
+    build:
+      context: ./ReverseProxy
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - flask-api
+      - go-websocket
+    networks:
+      - app-network
+
+  web-apache:
+    build:
+      context: ./WebApache
+    ports:
+      - "8081:80"  # Change le port si nécessaire
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
